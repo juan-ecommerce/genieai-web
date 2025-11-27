@@ -12,6 +12,56 @@
   }
 }
 
+/* Futuristic Effects */
+@keyframes gridPulse {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes hologramFlicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes neonGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(6, 255, 254, 0.5),
+                0 0 40px rgba(6, 255, 254, 0.3),
+                0 0 60px rgba(6, 255, 254, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(6, 255, 254, 0.8),
+                0 0 60px rgba(6, 255, 254, 0.5),
+                0 0 90px rgba(6, 255, 254, 0.3);
+  }
+}
+
+.hologram-border {
+  position: relative;
+  overflow: hidden;
+}
+
+.hologram-border::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(6, 182, 212, 0.3) 50%,
+    transparent 70%
+  );
+  animation: hologramScan 3s linear infinite;
+}
+
+@keyframes hologramScan {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
 @layer utilities {
   /* Custom animations */
   @keyframes gradient-x {

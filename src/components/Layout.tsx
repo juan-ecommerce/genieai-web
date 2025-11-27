@@ -1,14 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { 
-  Menu, 
-  X, 
-  Mail, 
-  Phone, 
-  MapPin
-} from 'lucide-react';
+import { Menu, X, Mail } from 'lucide-react';
 import ContactModal from './ContactModal';
-
+import logo from '../images/small_logo_with_text-removebg-preview.png';
 
 const Layout: React.FC = () => {
   const [scrollY, setScrollY] = useState(0);
@@ -17,15 +11,11 @@ const Layout: React.FC = () => {
   const location = useLocation();
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
-
+    const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Scroll to top when location changes
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location]);
@@ -40,19 +30,28 @@ const Layout: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Navigation */}
+    <div className="min-h-screen bg-black">
+      {/* Animated Background Grid */}
+      <div className="fixed inset-0 z-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-black via-blue-950 to-black"></div>
+        <div className="absolute inset-0 opacity-20" style={{
+          backgroundImage: 'linear-gradient(rgba(6, 182, 212, 0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(6, 182, 212, 0.3) 1px, transparent 1px)',
+          backgroundSize: '50px 50px',
+          animation: 'gridPulse 8s ease-in-out infinite'
+        }}></div>
+        {/* Glowing orbs */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
+      </div>
+      
+      {/* Simplified Navigation */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrollY > 50 ? 'bg-white/95 backdrop-blur-lg shadow-lg' : 'bg-transparent'
+        scrollY > 50 ? 'bg-black/90 backdrop-blur-xl border-b border-cyan-500/30 shadow-lg shadow-cyan-500/10' : 'bg-transparent'
       }`}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="flex justify-between items-center h-20">
             <Link to="/" className="flex items-center">
-              <img 
-                src="/src/images/small_logo_with_text.png" 
-                alt="GenieAI" 
-                className="h-10 w-auto"
-              />
+              <img src={logo} alt="GenieAI" className="h-10" />
             </Link>
 
             {/* Desktop Navigation */}
@@ -61,59 +60,48 @@ const Layout: React.FC = () => {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`font-inter font-medium transition-colors duration-200 ${
+                  className={`relative font-medium transition-all duration-200 group ${
                     location.pathname === item.href
-                      ? 'text-blue-600 border-b-2 border-blue-600 pb-1'
-                      : scrollY > 50 
-                        ? 'text-gray-700 hover:text-blue-600' 
-                        : 'text-gray-900 hover:text-blue-600'
+                      ? 'text-cyan-400'
+                      : 'text-gray-300 hover:text-white'
                   }`}
                 >
                   {item.name}
+                  {location.pathname === item.href && (
+                    <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-cyan-400 to-blue-500 shadow-lg shadow-cyan-400/50"></span>
+                  )}
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-cyan-400 to-blue-500 group-hover:w-full transition-all duration-300 shadow-lg shadow-cyan-400/50"></span>
                 </Link>
               ))}
               <button
                 onClick={() => setIsContactModalOpen(true)}
-                className={`px-6 py-2 rounded-lg font-inter font-semibold transition-all duration-300 ${
-                  scrollY > 50
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                    : 'bg-blue-600/90 hover:bg-blue-700 text-white backdrop-blur-sm'
-                }`}
+                className="relative px-6 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg font-semibold transition-all duration-300 shadow-lg shadow-blue-500/50 hover:shadow-cyan-500/60 hover:scale-105 overflow-hidden group"
               >
-                Get Started
+                <span className="relative z-10">Contact</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/30 to-blue-400/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur"></div>
               </button>
             </div>
 
             {/* Mobile menu button */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className={`md:hidden p-3 rounded-lg transition-all duration-300 border ${
-                scrollY > 50 
-                  ? 'bg-gray-100 hover:bg-gray-200 border-gray-300' 
-                  : 'bg-white/90 backdrop-blur-sm hover:bg-white border-white/50'
-              }`}
+              className="md:hidden p-2 text-white"
             >
-              {isMenuOpen ? (
-                <X className={`h-6 w-6 ${scrollY > 50 ? 'text-gray-700' : 'text-gray-800'}`} />
-              ) : (
-                <Menu className={`h-6 w-6 ${scrollY > 50 ? 'text-gray-700' : 'text-gray-800'}`} />
-              )}
+              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
 
           {/* Mobile Navigation */}
           {isMenuOpen && (
-            <div className="md:hidden absolute top-full left-0 right-0 bg-white/95 backdrop-blur-lg shadow-lg border-t border-gray-200">
+            <div className="md:hidden border-t border-blue-500/20 bg-slate-900/95 backdrop-blur-xl">
               <div className="px-4 py-6 space-y-4">
                 {navigation.map((item) => (
                   <Link
                     key={item.name}
                     to={item.href}
                     onClick={() => setIsMenuOpen(false)}
-                    className={`block py-2 font-inter font-medium transition-colors duration-200 ${
-                      location.pathname === item.href
-                        ? 'text-blue-600 font-semibold'
-                        : 'text-gray-700 hover:text-blue-600'
+                    className={`block py-2 font-medium transition-colors ${
+                      location.pathname === item.href ? 'text-cyan-400' : 'text-gray-300'
                     }`}
                   >
                     {item.name}
@@ -124,9 +112,9 @@ const Layout: React.FC = () => {
                     setIsContactModalOpen(true);
                     setIsMenuOpen(false);
                   }}
-                  className="block w-full text-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-inter font-semibold transition-colors duration-300"
+                  className="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg font-semibold"
                 >
-                  Get Started
+                  Contact
                 </button>
               </div>
             </div>
@@ -139,61 +127,34 @@ const Layout: React.FC = () => {
         <Outlet />
       </main>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 py-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-3 gap-8 mb-12">
-            <div className="md:col-span-1">
-              <div className="flex items-center mb-6">
-                <div className="bg-white/10 backdrop-blur-sm p-3 rounded-lg border border-white/30">
-                  <img 
-                    src="/src/images/logo_dark_background.png" 
-                    alt="GenieAI" 
-                    className="h-16 w-auto border border-gray-300 rounded-lg"
-                  />
-                </div>
-              </div>
-              <p className="text-gray-400 font-inter leading-relaxed">
-                Next-generation AI automation agency specializing in multi-modal AI solutions.
-              </p>
+      {/* Simplified Footer */}
+      <footer className="relative bg-black/90 backdrop-blur-xl border-t border-cyan-500/20 py-12 px-6 z-10">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-center space-y-6 md:space-y-0">
+            <div className="flex items-center">
+              <img src={logo} alt="GenieAI" className="h-10" />
             </div>
             
-            <div>
-              <h3 className="text-white font-semibold font-inter mb-4">Services</h3>
-              <ul className="space-y-3">
-                <li><Link to="/ai-agents" className="text-gray-400 hover:text-white transition-colors duration-200 font-inter">AI Agents</Link></li>
-                <li><Link to="/rag" className="text-gray-400 hover:text-white transition-colors duration-200 font-inter">RAG Systems</Link></li>
-                <li><Link to="/automation" className="text-gray-400 hover:text-white transition-colors duration-200 font-inter">Automation</Link></li>
-                <li><Link to="/data-science" className="text-gray-400 hover:text-white transition-colors duration-200 font-inter">Data Science</Link></li>
-              </ul>
+            <div className="flex items-center space-x-6">
+              {navigation.slice(0, 4).map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className="text-gray-400 hover:text-white transition-colors text-sm"
+                >
+                  {item.name}
+                </Link>
+              ))}
             </div>
             
-            
-            <div>
-              <h3 className="text-white font-semibold font-inter mb-4">Contact Info</h3>
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  <Mail className="h-5 w-5 text-cyan-400" />
-                  <span className="text-gray-400 font-inter">juan@avancedev.com</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <Phone className="h-5 w-5 text-cyan-400" />
-                  <span className="text-gray-400 font-inter">+46 79 334 8387</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <MapPin className="h-5 w-5 text-cyan-400" />
-                  <span className="text-gray-400 font-inter">Stockholm, Sweden</span>
-                </div>
-              </div>
+            <div className="flex items-center space-x-3 text-gray-400">
+              <Mail className="h-4 w-4 text-cyan-400" />
+              <span className="text-sm">juan@avancedev.com</span>
             </div>
           </div>
           
-          <div className="border-t border-gray-800 pt-8">
-            <div className="flex justify-center">
-              <p className="text-gray-400 font-inter text-sm">
-                © 2025 GenieAI. All rights reserved.
-              </p>
-            </div>
+          <div className="border-t border-blue-500/20 mt-8 pt-8 text-center">
+            <p className="text-gray-500 text-sm">© 2025 GenieAI. All rights reserved.</p>
           </div>
         </div>
       </footer>
