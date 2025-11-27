@@ -34,9 +34,9 @@ const Home: React.FC = () => {
   ];
 
   return (
-    <div className="relative">
+    <main className="relative">
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden" aria-label="Hero section">
         {/* Futuristic Black Background with Effects */}
         <div className="absolute inset-0">
           {/* Animated Grid */}
@@ -82,15 +82,15 @@ const Home: React.FC = () => {
         <div className="max-w-5xl mx-auto text-center relative z-10 px-6">
           <div className="relative inline-block mb-8">
             <h1 className="text-6xl md:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 animate-gradient-x pb-2" style={{backgroundSize: '200% auto'}}>
-              AI Automation
+              AI Automation Agency
             </h1>
             <div className="absolute -inset-4 bg-gradient-to-r from-cyan-400/20 via-blue-400/20 to-purple-400/20 blur-3xl -z-10 animate-pulse"></div>
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-            Next-Gen Intelligence
-          </h2>
+          <p className="text-2xl md:text-3xl font-bold text-white mb-6">
+            RAG Systems, AI Agents & Business Automation in Stockholm
+          </p>
           <p className="text-xl text-gray-400 mb-12 max-w-3xl mx-auto leading-relaxed">
-            Building intelligent AI agents, RAG systems, and automation solutions for modern businesses
+            Transform your business with cutting-edge retrieval-augmented generation systems, intelligent AI agents, and automated workflows. Expert AI consulting and data science solutions for modern enterprises.
           </p>
           <button 
             onClick={() => setIsContactModalOpen(true)}
@@ -188,7 +188,7 @@ const Home: React.FC = () => {
         isOpen={isContactModalOpen} 
         onClose={() => setIsContactModalOpen(false)} 
       />
-    </div>
+    </main>
   );
 };
 
