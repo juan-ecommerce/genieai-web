@@ -3,6 +3,7 @@ export function useDialog(
   open: boolean,
   ref: RefObject<HTMLElement>,
   onClose: () => void,
+  returnFocusFallback?: () => void,
 ) {
   useEffect(() => {
     if (!open || !ref.current) return;
@@ -65,7 +66,8 @@ export function useDialog(
       cancelAnimationFrame(frame);
       document.removeEventListener("keydown", keydown);
       document.body.style.overflow = originalOverflow;
-      previous?.focus();
+      if (previous?.isConnected) previous.focus();
+      else returnFocusFallback?.();
     };
-  }, [open, ref, onClose]);
+  }, [open, ref, onClose, returnFocusFallback]);
 }

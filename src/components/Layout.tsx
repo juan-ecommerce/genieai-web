@@ -5,6 +5,7 @@ import { ArrowUpRight, ChevronDown, Menu, X } from "lucide-react";
 import Brand from "./ui/Brand";
 import ContactModal from "./ContactModal";
 import ChatWidget from "./ChatWidget";
+import CookieConsent from "./CookieConsent";
 import Seo from "./Seo";
 import { ExperienceContext, type Inquiry } from "../lib/experience";
 import { services } from "../data/services";
@@ -17,8 +18,15 @@ export default function Layout() {
     [solutions, setSolutions] = useState(false);
   const [contact, setContact] = useState(false),
     [chat, setChat] = useState(false),
+    [cookieSettings, setCookieSettings] = useState(false),
     [draft, setDraft] = useState<Inquiry>();
   const dropdown = useRef<HTMLDivElement>(null);
+  const openCookieSettings = useCallback(() => {
+    setContact(false);
+    setChat(false);
+    setCookieSettings(true);
+  }, []);
+  const closeCookieSettings = useCallback(() => setCookieSettings(false), []);
   const openContact = useCallback((inquiry?: Inquiry) => {
     if (inquiry) setDraft({ ...inquiry });
     setChat(false);
@@ -186,7 +194,10 @@ export default function Layout() {
         <div className="footer-bottom">
           <span>© {new Date().getFullYear()} GenieAI</span>
           <span>Designed for what’s next.</span>
-          <Link to="/privacy">Privacy</Link>
+          <div className="footer-policy-links">
+            <Link to="/privacy">Privacy</Link>
+            <button onClick={openCookieSettings}>Cookie settings</button>
+          </div>
         </div>
       </footer>
       <ChatWidget
@@ -196,6 +207,12 @@ export default function Layout() {
         onInquiry={openContact}
       />
       <ContactModal isOpen={contact} onClose={closeContact} draft={draft} />
+      <CookieConsent
+        settingsOpen={cookieSettings}
+        onOpenSettings={openCookieSettings}
+        onCloseSettings={closeCookieSettings}
+        hidden={chat || contact}
+      />
     </ExperienceContext.Provider>
   );
 }

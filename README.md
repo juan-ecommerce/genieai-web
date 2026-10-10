@@ -30,7 +30,15 @@ Static-only hosting and npm run preview serve the frontend without its API. They
 
 Chat has a 20 requests/minute/IP limit; email has 5/hour/IP. These counters live in memory, reset on restart, and are local to each server instance. Multiple replicas require a shared limiter before public launch. Chat requests have bounded history and an upstream timeout. SMTP has connection and socket timeouts.
 
-Visitors' chat and form details live only in page memory. No application database, analytics, or browser storage is added. Conversation data goes to OpenRouter when chat is configured; enquiries go to your SMTP provider. See /privacy and review providers' retention settings for your deployment.
+Visitors' chat and form details live only in page memory. No application database or analytics is added. Cookie preferences are the only application data saved in browser storage. Conversation data goes to OpenRouter when chat is configured; enquiries go to your SMTP provider. See /privacy and review providers' retention settings for your deployment.
+
+## Cookie consent
+
+The first-visit banner offers equally prominent Accept all and Reject optional choices, plus a preferences panel. Cookie settings can be reopened from the floating control or the footer on any page. No analytics, advertising, or tracking cookies are currently used; neither choice adds trackers.
+
+The essential `genieai.cookie-consent` local-storage record contains only the selection, policy version, and saved/expiry timestamps. It expires after 180 days. Invalid, expired, and previous-policy records prompt again. If storage is blocked, the choice lasts for the current page visit. Changes sync across tabs.
+
+Before adding any optional storage or tracking provider, update the disclosed purposes/providers and increment POLICY_VERSION in src/lib/cookieConsent.ts. Integrate the provider with purpose-specific consent and ensure revocation stops it; the current banner does not authorize undisclosed future trackers. Chat and enquiry consent remain separate.
 
 ## Verification
 

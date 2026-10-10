@@ -34,6 +34,31 @@ export default function Privacy() {
         limiting. Infrastructure and email providers may maintain their own
         operational records.
       </p>
+      <h2>Cookies & your choices</h2>
+      <p>
+        This website currently uses no analytics, advertising, or tracking
+        cookies. Our cookie banner lets you accept all listed cookies, reject
+        optional cookies, or review preferences. Both choices currently keep
+        the website free of optional trackers.
+      </p>
+      <p>
+        After you choose, we save a preference called{" "}
+        <code>genieai.cookie-consent</code> in local storage on your device for
+        up to 180 days. It stores your choice, the consent policy version, and
+        the date and expiry of your selection. This essential preference does
+        not contain personal contact information or conversation content and
+        is not sent to our server. If your browser blocks storage, your choice
+        applies only to the current visit.
+      </p>
+      <p>
+        Use <strong>Cookie settings</strong>, available on every page and in
+        the footer, to change or withdraw your choice. Choosing{" "}
+        <strong>Reject optional</strong> withdraws any optional consent. If we
+        change the storage purposes or providers, we will explain the changes
+        and ask for a fresh choice. Cookie preferences do not replace your
+        separate agreement to send a project enquiry or your decision to use
+        the AI chat.
+      </p>
       <h2>Questions</h2>
       <p>
         Contact <a href="mailto:juan@avancedev.com">juan@avancedev.com</a> with
