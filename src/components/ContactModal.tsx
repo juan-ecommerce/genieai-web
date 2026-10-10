@@ -1,220 +1,241 @@
-import React, { useState } from 'react';
-import { X, Mail, Phone, User, Send, CheckCircle } from 'lucide-react';
-
-interface ContactModalProps {
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
+import { ArrowUpRight, Check, Loader2, Mail, Phone, X } from "lucide-react";
+import { emptyInquiry, type Inquiry } from "../lib/experience";
+import { postJson } from "../lib/api";
+import { useDialog } from "../hooks/useDialog";
+export default function ContactModal({
+  isOpen,
+  onClose,
+  draft,
+}: {
   isOpen: boolean;
   onClose: () => void;
-}
-
-const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    contact: '',
-    contactType: 'email',
-    message: ''
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      const subject = encodeURIComponent('New Contact Form Submission - GenieAI');
-      const body = encodeURIComponent(`
-Name: ${formData.name}
-${formData.contactType === 'email' ? 'Email' : 'Phone'}: ${formData.contact}
-Message: ${formData.message || 'No additional message provided'}
-
-Submitted from GenieAI website contact form.
-      `);
-      
-      window.location.href = `mailto:juan@avancedev.com?subject=${subject}&body=${body}`;
-      
-      setIsSubmitted(true);
-      setTimeout(() => {
-        onClose();
-        setIsSubmitted(false);
-        setFormData({ name: '', contact: '', contactType: 'email', message: '' });
-      }, 2000);
-    } catch (error) {
-      console.error('Error submitting form:', error);
-    } finally {
-      setIsSubmitting(false);
+  draft?: Inquiry;
+}) {
+  const dialog = useRef<HTMLDivElement>(null);
+  const [form, setForm] = useState<Inquiry>(emptyInquiry);
+  const [consent, setConsent] = useState(false),
+    [website, setWebsite] = useState("");
+  const [submitting, setSubmitting] = useState(false),
+    [success, setSuccess] = useState(false),
+    [error, setError] = useState("");
+  const pending = useRef(false);
+  useDialog(isOpen, dialog, onClose);
+  useEffect(() => {
+    if (draft) {
+      setForm(draft);
+      setConsent(false);
+      setError("");
     }
-  };
-
-  const handleClose = () => {
-    onClose();
-    setIsSubmitted(false);
-    setFormData({ name: '', contact: '', contactType: 'email', message: '' });
-  };
-
+  }, [draft]);
+  useEffect(() => {
+    if (isOpen) setSuccess(false);
+  }, [isOpen]);
+  function field(name: keyof Inquiry, value: string) {
+    setForm((previous) => ({ ...previous, [name]: value }));
+  }
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (pending.current) return;
+    pending.current = true;
+    setSubmitting(true);
+    setError("");
+    try {
+      const result = await postJson<{ success: boolean }>("/api/contact", {
+        ...form,
+        consent,
+        website,
+      });
+      if (!result.success)
+        throw new Error(
+          "Your enquiry could not be delivered. Please try again.",
+        );
+      setSuccess(true);
+      setForm(emptyInquiry);
+      setConsent(false);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Please try again or email Juan directly.",
+      );
+    } finally {
+      pending.current = false;
+      setSubmitting(false);
+    }
+  }
   if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold font-inter text-gray-900">
-            Get Started
-          </h2>
-          <button
-            onClick={handleClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="h-5 w-5 text-gray-500" />
-          </button>
-        </div>
-
-        {/* Success State */}
-        {isSubmitted ? (
-          <div className="p-8 text-center">
-            <div className="bg-green-100 p-4 rounded-full w-fit mx-auto mb-6">
-              <CheckCircle className="h-12 w-12 text-green-600" />
-            </div>
-            <h3 className="text-xl font-bold font-inter mb-4 text-gray-900">
-              Thank You!
-            </h3>
-            <p className="text-gray-600">
-              Your message has been sent successfully. I'll get back to you as soon as possible.
+    <div
+      className="overlay-backdrop"
+      onClick={(event) => {
+        if (event.target === event.currentTarget && !submitting) onClose();
+      }}
+    >
+      <div
+        className="contact-dialog"
+        ref={dialog}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="contact-title"
+        tabIndex={-1}
+      >
+        <button
+          className="icon-button dialog-close"
+          aria-label="Close enquiry"
+          onClick={onClose}
+        >
+          <X size={17} />
+        </button>
+        <p className="eyebrow">A GOOD CONVERSATION GOES A LONG WAY</p>
+        <h2 id="contact-title">Let’s build what’s next.</h2>
+        {success ? (
+          <div className="contact-success" role="status">
+            <span className="success-symbol">
+              <Check size={26} />
+            </span>
+            <h3>Your enquiry is on its way.</h3>
+            <p>
+              It has been accepted for delivery to Juan.
+              <br />
+              Thank you for starting the conversation.
             </p>
+            <button className="button button-outline" onClick={onClose}>
+              Back to the possibilities <ArrowUpRight size={16} />
+            </button>
           </div>
         ) : (
-          /* Form */
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            <p className="text-gray-600 text-sm">
-              Share your details and I'll get back to you within 24 hours to discuss your AI project.
+          <>
+            <p className="contact-intro">
+              Tell us a little about your idea. Juan will follow up with you
+              directly.
             </p>
-
-            {/* Name Field */}
-            <div>
-              <label htmlFor="name" className="block text-sm font-semibold text-gray-900 mb-2">
-                Your Name *
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  required
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                  placeholder="Enter your full name"
-                />
-              </div>
-            </div>
-
-            {/* Contact Type Selection */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">
-                Preferred Contact Method *
-              </label>
-              <div className="flex gap-4 mb-3">
-                <label className="flex items-center">
+            <form className="contact-form" onSubmit={submit}>
+              <div className="field-row">
+                <label className="field">
+                  Your name
                   <input
-                    type="radio"
-                    name="contactType"
-                    value="email"
-                    checked={formData.contactType === 'email'}
-                    onChange={handleInputChange}
-                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                    autoComplete="name"
+                    required
+                    minLength={2}
+                    maxLength={100}
+                    value={form.name}
+                    onChange={(event) => field("name", event.target.value)}
+                    placeholder="Alex"
+                    data-autofocus
                   />
-                  <span className="ml-2 text-gray-700">Email</span>
                 </label>
-                <label className="flex items-center">
+                <label className="field">
+                  Email address
                   <input
-                    type="radio"
-                    name="contactType"
-                    value="phone"
-                    checked={formData.contactType === 'phone'}
-                    onChange={handleInputChange}
-                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    maxLength={254}
+                    value={form.email}
+                    onChange={(event) => field("email", event.target.value)}
+                    placeholder="alex@company.com"
                   />
-                  <span className="ml-2 text-gray-700">Phone</span>
                 </label>
               </div>
-            </div>
-
-            {/* Contact Field */}
-            <div>
-              <label htmlFor="contact" className="block text-sm font-semibold text-gray-900 mb-2">
-                {formData.contactType === 'email' ? 'Email Address' : 'Phone Number'} *
-              </label>
-              <div className="relative">
-                {formData.contactType === 'email' ? (
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                ) : (
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                )}
+              <label className="field">
+                Company <span className="sr-only">(optional)</span>
                 <input
-                  type={formData.contactType === 'email' ? 'email' : 'tel'}
-                  id="contact"
-                  name="contact"
-                  required
-                  value={formData.contact}
-                  onChange={handleInputChange}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                  placeholder={formData.contactType === 'email' ? 'your@email.com' : '+1 (555) 123-4567'}
+                  autoComplete="organization"
+                  maxLength={120}
+                  value={form.company}
+                  onChange={(event) => field("company", event.target.value)}
+                  placeholder="Your company (optional)"
                 />
-              </div>
-            </div>
-
-            {/* Message Field */}
-            <div>
-              <label htmlFor="message" className="block text-sm font-semibold text-gray-900 mb-2">
-                Tell me about your project (Optional)
               </label>
-              <textarea
-                id="message"
-                name="message"
-                rows={3}
-                value={formData.message}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-none"
-                placeholder="Briefly describe your AI automation needs..."
-              />
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isSubmitting || !formData.name || !formData.contact}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 text-white py-3 px-6 rounded-lg font-semibold transition-all duration-300 flex items-center justify-center disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Sending...
-                </>
-              ) : (
-                <>
-                  Send Message
-                  <Send className="ml-2 h-4 w-4" />
-                </>
+              <label className="field">
+                Your project
+                <textarea
+                  required
+                  minLength={10}
+                  maxLength={4000}
+                  value={form.message}
+                  onChange={(event) => field("message", event.target.value)}
+                  placeholder="What would you like to make work better?"
+                />
+              </label>
+              <div className="sr-only" aria-hidden="true">
+                <label>
+                  Website
+                  <input
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={website}
+                    onChange={(event) => setWebsite(event.target.value)}
+                  />
+                </label>
+              </div>
+              <label className="consent-label">
+                <input
+                  type="checkbox"
+                  required
+                  checked={consent}
+                  onChange={(event) => setConsent(event.target.checked)}
+                />
+                I agree to be contacted about this enquiry
+              </label>
+              {error && (
+                <p className="form-error" role="alert">
+                  {error}
+                </p>
               )}
-            </button>
-
-            <p className="text-gray-500 text-xs text-center">
-              Your information is secure and will only be used to contact you about your inquiry.
-            </p>
-          </form>
+              <button
+                className="button button-light"
+                type="submit"
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 size={16} />
+                    Sending your enquiry…
+                  </>
+                ) : (
+                  <>
+                    Send enquiry <ArrowUpRight size={17} />
+                  </>
+                )}
+              </button>
+              <p className="form-note">
+                Sent to juan@avancedev.com.{" "}
+                <Link to="/privacy" onClick={onClose}>
+                  How we handle your details
+                </Link>
+              </p>
+            </form>
+            <a
+              className="email-fallback"
+              href={
+                "mailto:juan@avancedev.com?subject=" +
+                encodeURIComponent("GenieAI project enquiry") +
+                "&body=" +
+                encodeURIComponent(
+                  "Name: " +
+                    form.name +
+                    "\nEmail: " +
+                    form.email +
+                    "\nCompany: " +
+                    form.company +
+                    "\n\n" +
+                    form.message,
+                )
+              }
+            >
+              <Mail size={13} />
+              Prefer email? Open a draft to Juan
+            </a>
+            <a className="email-fallback" href="tel:+46793348387">
+              <Phone size={13} />
+              Call Juan: +46 79 3348387
+            </a>
+          </>
         )}
       </div>
     </div>
   );
-};
-
-export default ContactModal;
+}

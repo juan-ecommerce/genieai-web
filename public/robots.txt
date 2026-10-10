@@ -1,12 +1,4 @@
-# robots.txt for GenieAI
 User-agent: *
 Allow: /
-
-# Sitemaps
+Disallow: /api/
 Sitemap: https://genieai.com/sitemap.xml
-
-# Crawl-delay
-Crawl-delay: 10
-
-# Disallow admin/private areas if any
-# Disallow: /admin/

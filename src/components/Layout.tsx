@@ -1,170 +1,201 @@
-import React, { useState, useEffect } from 'react';
-import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Menu, X, Mail } from 'lucide-react';
-import ContactModal from './ContactModal';
-import logo from '../images/small_logo_with_text-removebg-preview.png';
-
-const Layout: React.FC = () => {
-  const [scrollY, setScrollY] = useState(0);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
-  const location = useLocation();
-
-  useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, Outlet, useLocation } from "react-router-dom";
+import { motion, useReducedMotion, useScroll } from "motion/react";
+import { ArrowUpRight, ChevronDown, Menu, X } from "lucide-react";
+import Brand from "./ui/Brand";
+import ContactModal from "./ContactModal";
+import ChatWidget from "./ChatWidget";
+import Seo from "./Seo";
+import { ExperienceContext, type Inquiry } from "../lib/experience";
+import { services } from "../data/services";
+export default function Layout() {
+  const location = useLocation(),
+    reduced = useReducedMotion(),
+    { scrollYProgress } = useScroll();
+  const [scrolled, setScrolled] = useState(false),
+    [menu, setMenu] = useState(false),
+    [solutions, setSolutions] = useState(false);
+  const [contact, setContact] = useState(false),
+    [chat, setChat] = useState(false),
+    [draft, setDraft] = useState<Inquiry>();
+  const dropdown = useRef<HTMLDivElement>(null);
+  const openContact = useCallback((inquiry?: Inquiry) => {
+    if (inquiry) setDraft({ ...inquiry });
+    setChat(false);
+    setMenu(false);
+    setContact(true);
   }, []);
-
+  const closeContact = useCallback(() => setContact(false), []),
+    closeChat = useCallback(() => setChat(false), []),
+    openChat = useCallback(() => setChat(true), []);
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [location]);
-
-  const navigation = [
-    { name: 'Home', href: '/' },
-    { name: 'AI Agents', href: '/ai-agents' },
-    { name: 'RAG Systems', href: '/rag' },
-    { name: 'Automation', href: '/automation' },
-    { name: 'Data Science', href: '/data-science' },
-    { name: 'About', href: '/about' }
-  ];
-
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  useEffect(() => {
+    setMenu(false);
+    setSolutions(false);
+    const frame = requestAnimationFrame(() => {
+      if (location.hash) {
+        document
+          .getElementById(location.hash.slice(1))
+          ?.scrollIntoView({ behavior: reduced ? "instant" : "smooth" });
+      } else window.scrollTo({ top: 0, behavior: "instant" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [location.pathname, location.hash, reduced]);
+  useEffect(() => {
+    function outside(event: PointerEvent) {
+      if (!dropdown.current?.contains(event.target as Node))
+        setSolutions(false);
+    }
+    function keydown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setMenu(false);
+        setSolutions(false);
+      }
+    }
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", keydown);
+    return () => {
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("keydown", keydown);
+    };
+  }, []);
   return (
-    <div className="min-h-screen bg-black">
-      {/* Animated Background Grid */}
-      <div className="fixed inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-black via-blue-950 to-black"></div>
-        <div className="absolute inset-0 opacity-20" style={{
-          backgroundImage: 'linear-gradient(rgba(6, 182, 212, 0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(6, 182, 212, 0.3) 1px, transparent 1px)',
-          backgroundSize: '50px 50px',
-          animation: 'gridPulse 8s ease-in-out infinite'
-        }}></div>
-        {/* Glowing orbs */}
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
-      </div>
-      
-      {/* Simplified Navigation */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrollY > 50 ? 'bg-black/90 backdrop-blur-xl border-b border-cyan-500/30 shadow-lg shadow-cyan-500/10' : 'bg-transparent'
-      }`}>
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <Link to="/" className="flex items-center">
-              <img src={logo} alt="GenieAI" className="h-10" />
-            </Link>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`relative font-medium transition-all duration-200 group ${
-                    location.pathname === item.href
-                      ? 'text-cyan-400'
-                      : 'text-gray-300 hover:text-white'
-                  }`}
-                >
-                  {item.name}
-                  {location.pathname === item.href && (
-                    <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-cyan-400 to-blue-500 shadow-lg shadow-cyan-400/50"></span>
-                  )}
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-cyan-400 to-blue-500 group-hover:w-full transition-all duration-300 shadow-lg shadow-cyan-400/50"></span>
-                </Link>
-              ))}
+    <ExperienceContext.Provider value={{ openContact, openChat }}>
+      <Seo />
+      <a href="#main-content" className="skip-link">
+        Skip to content
+      </a>
+      <header className={"site-header " + (scrolled || menu ? "scrolled" : "")}>
+        <div className="header-inner">
+          <Link to="/" aria-label="GenieAI home">
+            <Brand />
+          </Link>
+          <nav className="desktop-nav" aria-label="Main navigation">
+            <div className="nav-dropdown" ref={dropdown}>
               <button
-                onClick={() => setIsContactModalOpen(true)}
-                className="relative px-6 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg font-semibold transition-all duration-300 shadow-lg shadow-blue-500/50 hover:shadow-cyan-500/60 hover:scale-105 overflow-hidden group"
+                aria-expanded={solutions}
+                aria-controls="solutions-menu"
+                onClick={() => setSolutions((value) => !value)}
               >
-                <span className="relative z-10">Contact</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/30 to-blue-400/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur"></div>
+                Solutions <ChevronDown size={12} />
               </button>
+              {solutions && (
+                <div className="nav-dropdown-menu" id="solutions-menu">
+                  {services.map((service) => (
+                    <Link key={service.id} to={service.path}>
+                      {service.name}
+                      <ArrowUpRight size={13} />
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
-
-            {/* Mobile menu button */}
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden p-2 text-white"
-            >
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
-          </div>
-
-          {/* Mobile Navigation */}
-          {isMenuOpen && (
-            <div className="md:hidden border-t border-blue-500/20 bg-slate-900/95 backdrop-blur-xl">
-              <div className="px-4 py-6 space-y-4">
-                {navigation.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    onClick={() => setIsMenuOpen(false)}
-                    className={`block py-2 font-medium transition-colors ${
-                      location.pathname === item.href ? 'text-cyan-400' : 'text-gray-300'
-                    }`}
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-                <button
-                  onClick={() => {
-                    setIsContactModalOpen(true);
-                    setIsMenuOpen(false);
-                  }}
-                  className="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg font-semibold"
-                >
-                  Contact
-                </button>
-              </div>
-            </div>
-          )}
+            <Link to="/#approach">Our approach</Link>
+            <Link to="/about">The studio</Link>
+          </nav>
+          <button
+            className="button button-outline header-contact"
+            onClick={() => openContact()}
+          >
+            Let’s talk <ArrowUpRight size={14} />
+          </button>
+          <button
+            className="mobile-toggle"
+            aria-label={menu ? "Close navigation" : "Open navigation"}
+            aria-expanded={menu}
+            aria-controls="mobile-navigation"
+            onClick={() => setMenu((value) => !value)}
+          >
+            {menu ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="pt-20">
+        {menu && (
+          <nav
+            className="mobile-navigation"
+            id="mobile-navigation"
+            aria-label="Mobile navigation"
+          >
+            {services.map((service) => (
+              <Link key={service.id} to={service.path}>
+                {service.name}
+              </Link>
+            ))}
+            <Link to="/#approach">Our approach</Link>
+            <Link to="/about">The studio</Link>
+            <button
+              className="button button-light"
+              onClick={() => openContact()}
+            >
+              Let’s talk <ArrowUpRight size={17} />
+            </button>
+          </nav>
+        )}
+        {!reduced && (
+          <motion.div
+            className="scroll-progress"
+            style={{ scaleX: scrollYProgress }}
+          />
+        )}
+      </header>
+      <main id="main-content">
         <Outlet />
       </main>
-
-      {/* Simplified Footer */}
-      <footer className="relative bg-black/90 backdrop-blur-xl border-t border-cyan-500/20 py-12 px-6 z-10">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center space-y-6 md:space-y-0">
-            <div className="flex items-center">
-              <img src={logo} alt="GenieAI" className="h-10" />
-            </div>
-            
-            <div className="flex items-center space-x-6">
-              {navigation.slice(0, 4).map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className="text-gray-400 hover:text-white transition-colors text-sm"
-                >
-                  {item.name}
+      <footer className="site-footer">
+        <div className="footer-main">
+          <div className="footer-brand">
+            <Link to="/" aria-label="GenieAI home">
+              <Brand />
+            </Link>
+            <p>
+              Intelligent systems. Human possibilities.
+              <br />
+              Built in Stockholm, Sweden.
+            </p>
+          </div>
+          <div className="footer-links">
+            <div>
+              <span className="mono">EXPLORE</span>
+              {services.map((service) => (
+                <Link to={service.path} key={service.id}>
+                  {service.name}
                 </Link>
               ))}
             </div>
-            
-            <div className="flex items-center space-x-3 text-gray-400">
-              <Mail className="h-4 w-4 text-cyan-400" />
-              <span className="text-sm">juan@avancedev.com</span>
+            <div>
+              <span className="mono">THE STUDIO</span>
+              <Link to="/about">About GenieAI</Link>
+              <Link to="/#approach">Our approach</Link>
+              <Link to="/privacy">Your details & privacy</Link>
+            </div>
+            <div>
+              <span className="mono">START A CONVERSATION</span>
+              <a href="mailto:juan@avancedev.com">juan@avancedev.com</a>
+              <a href="tel:+46793348387">+46 79 3348387</a>
+              <button className="footer-chat-link" onClick={openChat}>
+                Talk to Genie <ArrowUpRight size={11} />
+              </button>
+              <span>Stockholm · Working together</span>
             </div>
           </div>
-          
-          <div className="border-t border-blue-500/20 mt-8 pt-8 text-center">
-            <p className="text-gray-500 text-sm">© 2025 GenieAI. All rights reserved.</p>
-          </div>
+        </div>
+        <div className="footer-bottom">
+          <span>© {new Date().getFullYear()} GenieAI</span>
+          <span>Designed for what’s next.</span>
+          <Link to="/privacy">Privacy</Link>
         </div>
       </footer>
-      
-      <ContactModal 
-        isOpen={isContactModalOpen} 
-        onClose={() => setIsContactModalOpen(false)} 
+      <ChatWidget
+        open={chat}
+        onOpen={openChat}
+        onClose={closeChat}
+        onInquiry={openContact}
       />
-    </div>
+      <ContactModal isOpen={contact} onClose={closeContact} draft={draft} />
+    </ExperienceContext.Provider>
   );
-};
-
-export default Layout;
+}

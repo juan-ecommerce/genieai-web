@@ -1,63 +1,45 @@
-# GenieAI - AI & Automation Portfolio
+# GenieAI agency website
 
-A modern, multi-page React website showcasing AI/ML expertise, RAG systems, automation solutions, and data science capabilities.
+A React/TypeScript agency website with a Three.js intelligence core, bloom, shader particles, pointer interaction, scroll parallax, animated service illustrations, and an interactive workflow playground. It includes an OpenRouter assistant and an enquiry form that sends to juan@avancedev.com through SMTP.
 
-## 🚀 Features
+## Local development
 
-- **Multi-page React application** with React Router
-- **Service Pages**: AI Agents, RAG Systems, Automation, Data Science
-- **Futuristic animations** with particle effects and gradients
-- **Fully responsive** design with mobile navigation
-- **Contact modal** with email integration
-- **Case study showcases** with detailed project information
+Use Node.js 22.17+ and npm.
 
-## 🛠️ Tech Stack
+1. Run npm ci.
+2. Copy .env.example to .env and fill in your own server credentials.
+3. Run npm run dev and open the URL printed by Vite.
 
-- **React 18.3.1** with TypeScript
-- **Vite** - Fast build tool
-- **Tailwind CSS** - Utility-first styling
-- **React Router** - Client-side routing
-- **Lucide React** - Icon library
+The Vite development server mounts the same API used in production. Without credentials, the website still works and chat/contact show honest unavailable states with direct email alternatives. Never prefix credentials with VITE_ or put them in frontend code.
 
-## 📦 Installation
+## Connect chat and email
 
-```bash
-# Install dependencies
-npm install
+OPENROUTER_API_KEY enables inference. OPENROUTER_MODEL defaults to openai/gpt-4.1-mini; choose an OpenRouter model that supports tool calls.
 
-# Run development server
-npm run dev
+SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, and SMTP_FROM enable delivery. Use an authenticated mailbox or transactional email provider and a verified sender. Port 587 uses STARTTLS; port 465 uses immediate TLS. The recipient is fixed on the server to juan@avancedev.com; the visitor address is Reply-To.
 
-# Build for production
-npm run build
+The assistant can prepare an enquiry draft. The visitor reviews it, agrees to be contacted, and submits it before the server sends email. A successful response means the SMTP server accepted the recipient; inbox delivery is not guaranteed. Failed submissions preserve the visitor's details.
 
-# Preview production build
-npm run preview
-```
+SITE_URL must be your final public origin. It controls production canonical URLs, social image URLs, sitemap, and allowed request origins. The default retains the original repository's genieai.com address. PORT defaults to 3000. Set TRUST_PROXY only to the number of reverse-proxy hops actually trusted in your deployment; this affects per-IP rate limits.
 
-## 🌐 Pages
+## Production
 
-- **Home** (`/`) - Landing page with hero, services preview, and case studies
-- **AI Agents** (`/ai-agents`) - RAG-powered AI agents and capabilities
-- **RAG Systems** (`/rag`) - Detailed RAG and Agentic RAG solutions
-- **Automation** (`/automation`) - Business process automation with n8n, Make.com, Zapier
-- **Data Science** (`/data-science`) - ML Engineering and data science services
-- **About** (`/about`) - Professional background and expertise
+Run npm run build, then npm start. The Node server serves the built website, route-specific metadata, sitemap, proper 404s, and both API endpoints. Put it behind HTTPS on a host that supports a long-running Node process, and provide secrets through that host's environment settings.
 
-## 🎨 Design Features
+Static-only hosting and npm run preview serve the frontend without its API. They need a separate backend/reverse proxy for /api. This repository does not publish itself.
 
-- Unique color themes per service area
-- Advanced particle effects and animations
-- Professional typography with Inter font
-- Glassmorphism and gradient effects
-- Mobile-responsive hamburger menu
+Chat has a 20 requests/minute/IP limit; email has 5/hour/IP. These counters live in memory, reset on restart, and are local to each server instance. Multiple replicas require a shared limiter before public launch. Chat requests have bounded history and an upstream timeout. SMTP has connection and socket timeouts.
 
-## 📧 Contact
+Visitors' chat and form details live only in page memory. No application database, analytics, or browser storage is added. Conversation data goes to OpenRouter when chat is configured; enquiries go to your SMTP provider. See /privacy and review providers' retention settings for your deployment.
 
-- **Email**: juan@avancedev.com
-- **Phone**: +46 79 334 8387
-- **Location**: Stockholm, Sweden
+## Verification
 
-## 📄 License
+- npm test — API validation, draft tools, delivery failures, and production routing.
+- npm run test:e2e — Playwright navigation, mobile, WebGL, keyboard behavior, and mocked chat/email flows.
+- npm run lint — ESLint.
+- npm run build — TypeScript checks and production build.
+- npm audit — dependency advisory check.
 
-© 2025 GenieAI. All rights reserved.
+For browser tests, install Chromium once with npx playwright install chromium. Tests inject fake providers and do not send real email or consume inference credits. Live inference and delivery require separate validation after you configure credentials.
+
+The GPU scene loads separately, pauses when offscreen, and uses fewer particles on small screens. Reduced-motion preferences or unavailable WebGL retain a CSS illustration and all content. Routes: /, /ai-agents, /rag, /automation, /data-science, /about, and /privacy.

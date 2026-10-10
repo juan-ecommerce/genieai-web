@@ -1,195 +1,306 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowRight, Bot, Database, Zap, TrendingUp } from 'lucide-react';
-import ContactModal from '../components/ContactModal';
-
-const Home: React.FC = () => {
-  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
-
-  const services = [
-    {
-      icon: Bot,
-      title: "AI Agents",
-      description: "Custom AI agents with RAG for intelligent automation and knowledge retrieval.",
-      link: "/ai-agents"
-    },
-    {
-      icon: Database,
-      title: "RAG Systems",
-      description: "Advanced retrieval-augmented generation systems for enterprise knowledge.",
-      link: "/rag"
-    },
-    {
-      icon: Zap,
-      title: "Automation",
-      description: "Streamline workflows with n8n, Make.com, and intelligent automation.",
-      link: "/automation"
-    },
-    {
-      icon: TrendingUp,
-      title: "Data Science",
-      description: "ML engineering and data science solutions for business intelligence.",
-      link: "/data-science"
-    }
-  ];
-
+import {
+  ArrowDown,
+  ArrowUpRight,
+  Pause,
+  Play,
+  Plus,
+  Sparkles,
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import {
+  motion,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from "motion/react";
+import { useRef, useState } from "react";
+import SceneShell from "../components/scene/SceneShell";
+import Reveal from "../components/ui/Reveal";
+import ServiceVisual from "../components/ui/ServiceVisual";
+import InteractiveCard from "../components/ui/InteractiveCard";
+import ProjectCatalog from "../components/ProjectCatalog";
+import ParallaxInsights from "../components/ParallaxInsights";
+import WorkflowPlayground from "../components/WorkflowPlayground";
+import CallToAction from "../components/CallToAction";
+import { services } from "../data/services";
+import { useExperience } from "../lib/experience";
+const process = [
+  {
+    number: "01",
+    title: "Find the right opportunity.",
+    text: "We start with your business, your tools, and the work that gets in the way. Together, we choose a problem worth solving.",
+  },
+  {
+    number: "02",
+    title: "Build something useful.",
+    text: "A focused prototype turns an idea into something you can try. We test it with real workflows and refine what matters.",
+  },
+  {
+    number: "03",
+    title: "Connect it to your world.",
+    text: "We integrate, deploy, and document the solution. Clear controls and human review keep your team in the loop.",
+  },
+  {
+    number: "04",
+    title: "Keep moving forward.",
+    text: "Measure what is working, learn from use, and improve. Intelligent systems get better when they are built to evolve.",
+  },
+];
+const faqs = [
+  {
+    q: "Where should we start with AI?",
+    a: "Start with one useful workflow. We can help you identify repetitive work, scattered knowledge, or a customer interaction that would benefit from better support—then explore a focused first project.",
+  },
+  {
+    q: "Can you work with our existing tools?",
+    a: "That is the starting point. We explore your current stack and connect the relevant systems through APIs, automation platforms, or custom integrations, depending on what your workflow needs.",
+  },
+  {
+    q: "Do we need a large project to begin?",
+    a: "A focused prototype is often a useful first step. Scope, budget, and timeline are agreed after we understand your goals and constraints.",
+  },
+  {
+    q: "How do you approach reliability and control?",
+    a: "We define what a solution should do, test it against realistic examples, and design appropriate review points. Data access, deployment, and ongoing evaluation are part of the project conversation.",
+  },
+];
+export default function Home() {
+  const [paused, setPaused] = useState(false);
+  const { openChat } = useExperience(),
+    heroRef = useRef<HTMLElement>(null),
+    reduced = useReducedMotion();
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+  const artY = useTransform(scrollYProgress, [0, 1], [0, 170]),
+    textY = useTransform(scrollYProgress, [0, 1], [0, 55]);
   return (
-    <main className="relative">
-      {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden" aria-label="Hero section">
-        {/* Futuristic Black Background with Effects */}
-        <div className="absolute inset-0">
-          {/* Animated Grid */}
-          <div className="absolute inset-0 opacity-30" style={{
-            backgroundImage: 'linear-gradient(rgba(6, 182, 212, 0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(6, 182, 212, 0.4) 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
-            animation: 'gridPulse 8s ease-in-out infinite'
-          }}></div>
-          
-          {/* Large Glowing Orbs */}
-          <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-cyan-500/20 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-blue-500/20 rounded-full blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
-          <div className="absolute top-1/2 right-1/3 w-[400px] h-[400px] bg-purple-500/15 rounded-full blur-3xl animate-pulse" style={{animationDelay: '4s'}}></div>
-          
-          {/* Floating Particles */}
-          {Array.from({ length: 30 }).map((_, i) => (
-            <div
-              key={i}
-              className="absolute w-1 h-1 bg-cyan-400 rounded-full animate-pulse"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 5}s`,
-                animationDuration: `${3 + Math.random() * 2}s`,
-                opacity: 0.6,
-                boxShadow: '0 0 10px rgba(6, 182, 212, 0.8)'
-              }}
-            />
-          ))}
-          
-          {/* Scanning Lines */}
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute w-full h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent animate-pulse" style={{top: '25%', animationDuration: '3s'}}></div>
-            <div className="absolute w-full h-px bg-gradient-to-r from-transparent via-blue-400 to-transparent animate-pulse" style={{top: '50%', animationDuration: '4s', animationDelay: '1s'}}></div>
-            <div className="absolute w-full h-px bg-gradient-to-r from-transparent via-purple-400 to-transparent animate-pulse" style={{top: '75%', animationDuration: '3.5s', animationDelay: '2s'}}></div>
-          </div>
-
-          {/* Rotating Geometric Shapes */}
-          <div className="absolute top-20 right-20 w-20 h-20 border-2 border-cyan-500/40 rotate-45 animate-spin" style={{animationDuration: '20s'}}></div>
-          <div className="absolute bottom-20 left-20 w-16 h-16 border-2 border-blue-500/40 animate-spin" style={{animationDuration: '15s', animationDirection: 'reverse'}}></div>
-        </div>
-        
-        <div className="max-w-5xl mx-auto text-center relative z-10 px-6">
-          <div className="relative inline-block mb-8">
-            <h1 className="text-6xl md:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 animate-gradient-x pb-2" style={{backgroundSize: '200% auto'}}>
-              AI Automation Agency
-            </h1>
-            <div className="absolute -inset-4 bg-gradient-to-r from-cyan-400/20 via-blue-400/20 to-purple-400/20 blur-3xl -z-10 animate-pulse"></div>
-          </div>
-          <p className="text-2xl md:text-3xl font-bold text-white mb-6">
-            RAG Systems, AI Agents & Business Automation in Stockholm
-          </p>
-          <p className="text-xl text-gray-400 mb-12 max-w-3xl mx-auto leading-relaxed">
-            Transform your business with cutting-edge retrieval-augmented generation systems, intelligent AI agents, and automated workflows. Expert AI consulting and data science solutions for modern enterprises.
-          </p>
-          <button 
-            onClick={() => setIsContactModalOpen(true)}
-            className="group relative bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white px-10 py-5 rounded-lg text-xl font-semibold transition-all duration-300 inline-flex items-center shadow-2xl shadow-cyan-500/50 hover:shadow-cyan-500/80 hover:scale-105 overflow-hidden"
-          >
-            <span className="relative z-10">Get Started</span>
-            <ArrowRight className="ml-3 h-6 w-6 relative z-10 group-hover:translate-x-2 transition-transform" />
-            <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/40 to-blue-400/40 opacity-0 group-hover:opacity-100 transition-opacity blur"></div>
-            {/* Animated border */}
-            <div className="absolute inset-0 rounded-lg">
-              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 opacity-0 group-hover:opacity-30 blur-sm"></div>
+    <>
+      <div className="hero-viewport">
+        <section className="hero section-wide" ref={heroRef}>
+          <div className="hero-grid" aria-hidden="true" />
+          <motion.div className="hero-copy" style={{ y: reduced ? 0 : textY }}>
+            <Reveal>
+              <p className="eyebrow">
+                <span className="status-dot" /> AI, DATA & COMMERCE STUDIO ·
+                STOCKHOLM
+              </p>
+            </Reveal>
+            <Reveal delay={0.1}>
+              <h1>
+                Intelligence.
+                <br />
+                Built for
+                <br />
+                <span className="hero-accent">what’s next.</span>
+              </h1>
+            </Reveal>
+            <Reveal delay={0.2}>
+              <p className="hero-description">
+                We turn complex workflows into intelligent systems.
+                <br className="desktop-break" /> AI, automation, and smarter
+                commerce.
+                <br className="desktop-break" /> Designed around your business.
+              </p>
+            </Reveal>
+            <Reveal className="hero-actions" delay={0.3}>
+              <Link to="/#solutions" className="button button-light">
+                Explore solutions <ArrowUpRight size={18} />
+              </Link>
+              <button className="button button-ghost" onClick={openChat}>
+                <Sparkles size={17} />
+                Talk to Genie
+              </button>
+            </Reveal>
+          </motion.div>
+          <motion.div className="hero-art" style={{ y: reduced ? 0 : artY }}>
+            <SceneShell paused={paused} />
+            <div className="core-label">
+              <span className="status-dot" />
+              <div>
+                <span className="mono">GENIE CORE / 001</span>
+                <p>Intelligence, connected.</p>
+              </div>
             </div>
-          </button>
+            <span className="art-coordinate coordinate-top">
+              59°20′N · 18°04′E
+            </span>
+            <span className="art-coordinate coordinate-bottom">
+              HUMAN IDEAS. INTELLIGENT SYSTEMS.
+            </span>
+          </motion.div>
+          <div className="hero-footer">
+            <span className="mono">BUILT TO WORK. DESIGNED TO EVOLVE.</span>
+            {!reduced && (
+              <button
+                className="motion-toggle"
+                onClick={() => setPaused((value) => !value)}
+                aria-label={
+                  paused ? "Resume 3D animation" : "Pause 3D animation"
+                }
+              >
+                {paused ? <Play size={12} /> : <Pause size={12} />}
+                <span>{paused ? "Resume motion" : "Pause motion"}</span>
+              </button>
+            )}
+            <Link to="/#solutions" className="scroll-cue">
+              Scroll to explore <ArrowDown size={16} />
+            </Link>
+          </div>
+        </section>
+      </div>
+      <div className="tools-strip">
+        <span className="mono">
+          THE TOOLS.
+          <br />
+          THE POSSIBILITIES.
+        </span>
+        <div className="tools-list">
+          {["OpenAI", "Claude", "n8n", "Make", "Python", "LangChain"].map(
+            (tool) => (
+              <span key={tool}>{tool}</span>
+            ),
+          )}
         </div>
-      </section>
-
-      {/* Services */}
-      <section className="relative py-32 px-6 z-10">
-        {/* Background Effect */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-950/30 to-transparent"></div>
-        
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center mb-20">
-            <div className="inline-block px-4 py-2 bg-cyan-500/10 border border-cyan-500/30 rounded-full mb-6">
-              <span className="text-cyan-400 font-semibold text-sm">OUR SERVICES</span>
-            </div>
-            <h2 className="text-5xl md:text-6xl font-bold text-white mb-6">
-              What We Build
+        <span className="tools-note">
+          Your stack,
+          <br />
+          connected.
+        </span>
+      </div>
+      <section className="section solutions-section" id="solutions">
+        <div className="section-heading">
+          <Reveal>
+            <p className="eyebrow">WHAT WE CAN BUILD TOGETHER</p>
+            <h2>
+              A little intelligence.
+              <br />
+              <span className="text-muted">A lot of possibility.</span>
             </h2>
-            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-              Cutting-edge AI solutions for the future
+          </Reveal>
+          <Reveal className="section-intro">
+            <p>
+              Ecommerce architecture, AI engineering, and machine learning.
+              <br />
+              From B2B platforms to B2C customer experiences.
             </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {services.map((service, index) => {
-              const IconComponent = service.icon;
-              return (
+          </Reveal>
+        </div>
+        <div className="service-grid">
+          {services.map((service, index) => (
+            <Reveal delay={index * 0.06} key={service.id}>
+              <InteractiveCard>
                 <Link
-                  key={index}
-                  to={service.link}
-                  className="group relative bg-black/40 backdrop-blur-xl border border-cyan-500/20 rounded-xl p-8 hover:bg-black/60 hover:border-cyan-500/60 transition-all duration-500 hover:-translate-y-2 overflow-hidden"
+                  to={service.path}
+                  className={"service-card service-" + service.id}
+                  aria-label={"Explore " + service.name}
                 >
-                  {/* Corner Glow Effect */}
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-cyan-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-blue-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  
-                  <div className="relative bg-gradient-to-br from-cyan-500 to-blue-500 p-4 rounded-lg w-fit mb-6 shadow-lg shadow-cyan-500/30 group-hover:shadow-cyan-500/60 transition-all">
-                    <IconComponent className="h-8 w-8 text-white" />
+                  <div className="card-top">
+                    <span className="mono">0{index + 1} / SOLUTION</span>
+                    <span className="card-arrow">
+                      <ArrowUpRight size={20} />
+                    </span>
                   </div>
-                  <h3 className="text-2xl font-bold mb-3 text-white group-hover:text-cyan-400 transition-colors">
-                    {service.title}
-                  </h3>
-                  <p className="text-gray-400 group-hover:text-gray-300 transition-colors">
-                    {service.description}
-                  </p>
-                  
-                  {/* Animated Border on Hover */}
-                  <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-cyan-500/0 via-cyan-500/50 to-cyan-500/0 blur-sm"></div>
-                  </div>
+                  <ServiceVisual type={service.id} />
+                  <h3>{service.name}</h3>
+                  <p>{service.short}</p>
+                  <span className="card-link">
+                    Explore the possibilities <ArrowUpRight size={14} />
+                  </span>
                 </Link>
-              );
-            })}
-          </div>
+              </InteractiveCard>
+            </Reveal>
+          ))}
         </div>
       </section>
-
-      {/* CTA Section */}
-      <section className="relative py-32 px-6 z-10">
-        <div className="max-w-4xl mx-auto text-center relative">
-          {/* Glowing Background */}
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-purple-500/10 rounded-3xl blur-3xl"></div>
-          
-          <div className="relative bg-black/40 backdrop-blur-xl border border-cyan-500/30 rounded-3xl p-16 shadow-2xl shadow-cyan-500/20">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Ready to Transform with AI?
+      <ParallaxInsights />
+      <ProjectCatalog />
+      <section className="manifesto section">
+        <Reveal>
+          <span className="eyebrow">OUR POINT OF VIEW</span>
+          <p>
+            AI should do more than
+            <br />
+            look impressive.
+            <br />
+            <span>
+              It should make your
+              <br />
+              business work better.
+            </span>
+          </p>
+        </Reveal>
+        <div className="manifesto-note">
+          <span className="plus-cross">+</span>
+          <p>
+            Useful by design.
+            <br />
+            Human at the centre.
+            <br />
+            Ready for what comes next.
+          </p>
+        </div>
+      </section>
+      <WorkflowPlayground />
+      <section className="section approach-section" id="approach">
+        <div className="approach-intro">
+          <Reveal>
+            <p className="eyebrow">HOW WE GET THERE</p>
+            <h2>
+              From “what if”
+              <br />
+              <span className="text-muted">to what’s next.</span>
             </h2>
-            <p className="text-xl text-gray-300 mb-10">
-              Let's build something extraordinary together
+            <p className="section-description">
+              A close collaboration.
+              <br />A clear path from idea to working system.
             </p>
-            <button
-              onClick={() => setIsContactModalOpen(true)}
-              className="group relative bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white px-10 py-5 rounded-lg text-lg font-semibold transition-all duration-300 inline-flex items-center shadow-2xl shadow-cyan-500/50 hover:scale-105 overflow-hidden"
-            >
-              <span className="relative z-10">Contact Us</span>
-              <ArrowRight className="ml-3 h-5 w-5 relative z-10 group-hover:translate-x-2 transition-transform" />
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/40 to-blue-400/40 opacity-0 group-hover:opacity-100 transition-opacity blur"></div>
-            </button>
+            <Link to="/about" className="inline-link">
+              Meet the studio <ArrowUpRight size={17} />
+            </Link>
+          </Reveal>
+          <div className="approach-symbol" aria-hidden="true">
+            <span />
+            <span />
+            <span />
           </div>
         </div>
+        <div className="process-list">
+          {process.map((item) => (
+            <Reveal className="process-item" key={item.number}>
+              <span className="mono process-number">{item.number}</span>
+              <div>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </div>
+              <Plus size={17} />
+            </Reveal>
+          ))}
+        </div>
       </section>
-      
-      <ContactModal 
-        isOpen={isContactModalOpen} 
-        onClose={() => setIsContactModalOpen(false)} 
-      />
-    </main>
+      <section className="section faq-section">
+        <Reveal>
+          <p className="eyebrow">A FEW GOOD QUESTIONS</p>
+          <h2>
+            Curious?
+            <br />
+            <span className="text-muted">You’re in the right place.</span>
+          </h2>
+        </Reveal>
+        <div className="faq-list">
+          {faqs.map((item) => (
+            <details key={item.q}>
+              <summary>
+                {item.q}
+                <Plus size={20} />
+              </summary>
+              <p>{item.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+      <CallToAction />
+    </>
   );
-};
-
-export default Home;
+}
