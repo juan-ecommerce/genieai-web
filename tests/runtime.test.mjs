@@ -36,6 +36,16 @@ test("production serves route metadata, API, assets, sitemap, and real 404s", as
       route.headers.get("content-security-policy"),
       /frame-ancestors 'none'/,
     );
+    for (const pathname of ["/", "/ai-agents"]) {
+      const head = await fetch(base + pathname, { method: "HEAD" });
+      assert.equal(head.status, 200, pathname + " supports health checks");
+      assert.match(head.headers.get("content-type"), /text\/html/);
+      assert.equal(await head.text(), "");
+    }
+    assert.equal(
+      (await fetch(base + "/not-a-page", { method: "HEAD" })).status,
+      404,
+    );
     assert.equal((await fetch(base + "/api/status")).status, 200);
     assert.equal((await fetch(base + "/api/missing")).status, 404);
     const asset = await fetch(base + "/assets/example.js");

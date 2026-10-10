@@ -135,7 +135,7 @@ export function createWebApp(env = process.env, options = {}) {
   );
   app.use((req, res) => {
     if (
-      req.method !== "GET" ||
+      (req.method !== "GET" && req.method !== "HEAD") ||
       /\.[^/]+$/.test(req.path) ||
       req.path.startsWith("/assets/")
     )
