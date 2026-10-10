@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 Disallow: /api/
-Sitemap: https://genieai.com/sitemap.xml
+Sitemap: https://genieai.se/sitemap.xml

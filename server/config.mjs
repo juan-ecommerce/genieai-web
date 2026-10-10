@@ -1,7 +1,7 @@
 export const LEAD_RECIPIENT = "juan@avancedev.com";
 
 export function createConfig(env = {}) {
-  let siteUrl = "https://genieai.com";
+  let siteUrl = "https://genieai.se";
   try {
     const parsed = new URL(env.SITE_URL || siteUrl);
     if (["http:", "https:"].includes(parsed.protocol)) siteUrl = parsed.origin;

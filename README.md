@@ -20,7 +20,7 @@ SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, and SMTP_FROM enable delivery. Use a
 
 The assistant can prepare an enquiry draft. The visitor reviews it, agrees to be contacted, and submits it before the server sends email. A successful response means the SMTP server accepted the recipient; inbox delivery is not guaranteed. Failed submissions preserve the visitor's details.
 
-SITE_URL must be your final public origin. It controls production canonical URLs, social image URLs, sitemap, and allowed request origins. The default retains the original repository's genieai.com address. PORT defaults to 3000. Set TRUST_PROXY only to the number of reverse-proxy hops actually trusted in your deployment; this affects per-IP rate limits.
+SITE_URL must be your final public origin. It controls production canonical URLs, social image URLs, sitemap, and allowed request origins. The default is https://genieai.se. PORT defaults to 3000. Set TRUST_PROXY only to the number of reverse-proxy hops actually trusted in your deployment; this affects per-IP rate limits.
 
 ## Production
 

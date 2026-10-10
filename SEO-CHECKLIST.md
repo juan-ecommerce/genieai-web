@@ -140,12 +140,12 @@
 
 ## 🔗 Important URLs to Submit
 
-- https://genieai.com/
-- https://genieai.com/ai-agents
-- https://genieai.com/rag
-- https://genieai.com/automation
-- https://genieai.com/data-science
-- https://genieai.com/about
+- https://genieai.se/
+- https://genieai.se/ai-agents
+- https://genieai.se/rag
+- https://genieai.se/automation
+- https://genieai.se/data-science
+- https://genieai.se/about
 
 ## 📱 Social Media Setup
 
