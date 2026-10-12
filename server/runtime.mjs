@@ -1,5 +1,7 @@
 const secretKeys = [
   "OPENROUTER_API_KEY",
+  "RESENDKEY",
+  "RESEND_FROM",
   "SMTP_HOST",
   "SMTP_PORT",
   "SMTP_USER",

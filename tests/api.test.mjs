@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createApiApp } from "../server/app.mjs";
+import { createConfig, emailConfigured } from "../server/config.mjs";
 
 const env = {
   OPENROUTER_API_KEY: "test-key",
@@ -205,6 +206,62 @@ test("contact always uses the fixed recipient and visitor reply-to", async (t) =
   assert.equal(email.to, "juan@avancedev.com");
   assert.equal(email.replyTo, inquiry.email);
   assert.match(email.text, /automate customer enquiries/);
+});
+
+test("Resend delivers an enquiry with the configured sender and fixed recipient", async (t) => {
+  let request;
+  const post = await fixture(t, {
+    env: { RESENDKEY: "resend-test-key", RESEND_FROM: "GenieAI <hello@example.test>" },
+    dependencies: {
+      emailFetchImpl: async (url, options) => {
+        request = { url, ...options };
+        return Response.json({ id: "test-resend-message-id" });
+      },
+    },
+  });
+  assert.equal((await post("/contact", { ...inquiry, to: "attacker@example.test" })).status, 400);
+  assert.equal(request, undefined);
+  const result = await post("/contact", inquiry);
+  assert.equal(result.status, 200);
+  assert.deepEqual(result.body, { success: true });
+  assert.equal(request.url, "https://api.resend.com/emails");
+  assert.equal(request.headers.Authorization, "Bearer resend-test-key");
+  assert.equal(request.headers["Content-Type"], "application/json");
+  const payload = JSON.parse(request.body);
+  assert.equal(payload.from, "GenieAI <hello@example.test>");
+  assert.deepEqual(payload.to, ["juan@avancedev.com"]);
+  assert.equal(payload.reply_to, inquiry.email);
+  assert.match(payload.text, /automate customer enquiries/);
+  assert.equal(request.signal instanceof AbortSignal, true);
+});
+
+test("Resend needs both the key and a sender; complete SMTP remains supported", () => {
+  assert.equal(emailConfigured(createConfig({ RESENDKEY: "test-key" })), false);
+  assert.equal(emailConfigured(createConfig({ RESEND_FROM: "hello@example.test" })), false);
+  assert.equal(emailConfigured(createConfig({ RESENDKEY: "test-key", RESEND_FROM: "hello@example.test" })), true);
+  assert.equal(emailConfigured(createConfig({ ...env, RESENDKEY: "test-key" })), true);
+});
+
+test("Resend failures never report success or leak provider details", async (t) => {
+  for (const emailFetchImpl of [
+    ...[401, 403, 429, 500].map((status) => async () => Response.json({ message: "private-resend-error" }, { status })),
+    async () => Response.json({}),
+    async () => Response.json({ id: "" }),
+    async () => Response.json({ id: "   " }),
+    async () => new Response("invalid JSON"),
+    async () => { throw new Error("private-resend-network-error"); },
+  ]) {
+    let providerCalls = 0;
+    const post = await fixture(t, {
+      env: { ...env, RESENDKEY: "private-resend-key", RESEND_FROM: "hello@example.test" },
+      dependencies: { emailFetchImpl: async (...args) => { providerCalls++; return emailFetchImpl(...args); } },
+    });
+    const result = await post("/contact", inquiry);
+    assert.equal(result.status, 502);
+    assert.equal(result.body.success, undefined);
+    assert.doesNotMatch(JSON.stringify(result.body), /private-resend/);
+    assert.equal(providerCalls, 1, "Resend is selected ahead of SMTP");
+  }
 });
 
 test("contact validates consent, email, message, and header-injection inputs", async (t) => {

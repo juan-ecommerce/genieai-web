@@ -1,6 +1,6 @@
 # GenieAI agency website
 
-A React/TypeScript agency website with a Three.js intelligence core, bloom, shader particles, pointer interaction, scroll parallax, animated service illustrations, and an interactive workflow playground. It includes an OpenRouter assistant and an enquiry form that sends to juan@avancedev.com through SMTP.
+A React/TypeScript agency website with a Three.js intelligence core, bloom, shader particles, pointer interaction, scroll parallax, animated service illustrations, and an interactive workflow playground. It includes an OpenRouter assistant and an enquiry form that sends to juan@avancedev.com through Resend or SMTP.
 
 ## Local development
 
@@ -16,9 +16,11 @@ The Vite development server mounts the same API used in production. Without cred
 
 OPENROUTER_API_KEY enables inference. OPENROUTER_MODEL defaults to openai/gpt-4.1-mini; choose an OpenRouter model that supports tool calls.
 
-SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, and SMTP_FROM enable delivery. Use an authenticated mailbox or transactional email provider and a verified sender. Port 587 uses STARTTLS; port 465 uses immediate TLS. The recipient is fixed on the server to juan@avancedev.com; the visitor address is Reply-To.
+For Resend, set `RESENDKEY` to your API key and `RESEND_FROM` to a sender on a verified Resend domain, for example `GenieAI <hello@genieai.se>` after verifying that domain. Both values are required. Resend takes priority when it is configured; SMTP remains supported. The server calls Resend's HTTPS email API with a 15-second timeout and reports success only when the provider returns a message ID. See [Resend's sending API](https://resend.com/docs/api-reference/emails/send-email).
 
-The assistant can prepare an enquiry draft. The visitor reviews it, agrees to be contacted, and submits it before the server sends email. A successful response means the SMTP server accepted the recipient; inbox delivery is not guaranteed. Failed submissions preserve the visitor's details.
+Alternatively, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, and SMTP_FROM enable delivery. Use an authenticated mailbox or transactional email provider and a verified sender. Port 587 uses STARTTLS; port 465 uses immediate TLS. The recipient is fixed on the server to juan@avancedev.com; the visitor address is Reply-To for both providers.
+
+The assistant can prepare an enquiry draft. The visitor reviews it, agrees to be contacted, and submits it before the server sends email. A successful response means the email provider accepted the enquiry for delivery; inbox delivery is not guaranteed. Failed submissions preserve the visitor's details.
 
 SITE_URL must be your final public origin. It controls production canonical URLs, social image URLs, sitemap, and allowed request origins. The default is https://genieai.se. PORT defaults to 3000. Set TRUST_PROXY only to the number of reverse-proxy hops actually trusted in your deployment; this affects per-IP rate limits.
 
@@ -34,12 +36,12 @@ The root `amplify.yml` overrides the console build specification. It uses Node 2
 
 For the production app in Stockholm (`eu-north-1`):
 
-1. Create an AWS Secrets Manager secret named `genieai/production` in `eu-north-1`. Use a JSON object with `OPENROUTER_API_KEY` and, when email is ready, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM`. SMTP port may be a string or a number. Store actual credentials only in Secrets Manager.
+1. Create an AWS Secrets Manager secret named `genieai/production` in `eu-north-1`. Use a JSON object with `OPENROUTER_API_KEY` and, for Resend email, `RESENDKEY` and `RESEND_FROM`. SMTP users can instead add `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM`; SMTP port may be a string or a number. Preserve existing fields when adding email configuration. Store actual credentials only in Secrets Manager.
 2. Create an IAM role whose trust policy allows `amplify.amazonaws.com` to perform `sts:AssumeRole`. Its permissions policy should allow `secretsmanager:GetSecretValue` only on the ARN of this secret. If using a customer-managed KMS key, also grant the necessary key decrypt permission.
 3. In Amplify, open **App settings → IAM roles → Compute role → Edit**, and attach the role to `main` only. Avoid giving preview branches access to production credentials.
-4. In **Hosting → Environment variables**, set `GENIEAI_SECRET_ID=genieai/production` and `GENIEAI_SECRET_REGION=eu-north-1`. Keep `SITE_URL=https://genieai.se` and `OPENROUTER_MODEL=openai/gpt-4.1-mini` here. Remove ordinary build variables containing the OpenRouter key or SMTP credentials after the runtime secret is configured.
+4. In **Hosting → Environment variables**, set `GENIEAI_SECRET_ID=genieai/production` and `GENIEAI_SECRET_REGION=eu-north-1`. Keep `SITE_URL=https://genieai.se` and `OPENROUTER_MODEL=openai/gpt-4.1-mini` here. Remove ordinary build variables containing OpenRouter, Resend, or SMTP credentials after the runtime secret is configured. Adding `RESENDKEY` only to Amplify's build variables does not enable runtime email.
 5. Deploy the commit containing `amplify.yml`. Its artifact directory is `.amplify-hosting`, rather than `dist`. An existing static app may also need its platform changed to `WEB_COMPUTE`; check the app's platform with `aws amplify get-app --app-id <app-id> --region eu-north-1 --query app.platform`. If it is `WEB`, use `aws amplify update-app --app-id <app-id> --platform WEB_COMPUTE --region eu-north-1` before deploying the compute bundle. Preserve domain redirects, and remove static SPA rewrites that intercept `/api/*` or replace server routes with `/index.html`.
-6. Verify that `https://www.genieai.se/api/status` returns JSON with `chat: true`, then send a real message through the website. `email` becomes true only after SMTP is configured; validate delivery separately.
+6. Verify that `https://www.genieai.se/api/status` returns JSON with `chat: true`, then send a real message through the website. `email` becomes true when Resend (key and sender) or SMTP is configured; validate delivery separately.
 
 Verify client IP handling before relying on per-IP limits: Amplify forwards requests through proxies, while `TRUST_PROXY` defaults to `0`. Without a verified trusted hop count, the app may count multiple visitors under the same proxy address. Determine the actual forwarded chain in the deployed environment, set `TRUST_PROXY` to that count in Amplify's build variables, redeploy, and confirm two independent client IPs receive separate limits. Never enable blanket proxy trust or assume the first forwarded address is trustworthy. Use an edge or shared rate limiter for enforcement across compute instances.
 
@@ -51,9 +53,9 @@ Local development and `npm start` continue to use the local `.env`. To inspect t
 
 AWS references: [Express deployment manifest](https://docs.aws.amazon.com/amplify/latest/userguide/deploy-express-server.html), [SSR Compute roles](https://docs.aws.amazon.com/amplify/latest/userguide/amplify-SSR-compute-role.html), and [Amplify build settings](https://docs.aws.amazon.com/amplify/latest/userguide/edit-build-settings.html).
 
-Chat has a 20 requests/minute/IP limit; email has 5/hour/IP. These counters live in memory, reset on restart, and are local to each server instance. Multiple replicas require a shared limiter before public launch. Chat requests have bounded history and an upstream timeout. SMTP has connection and socket timeouts.
+Chat has a 20 requests/minute/IP limit; email has 5/hour/IP. These counters live in memory, reset on restart, and are local to each server instance. Multiple replicas require a shared limiter before public launch. Chat requests have bounded history and an upstream timeout. Resend has an HTTP timeout; SMTP has connection and socket timeouts.
 
-Visitors' chat and form details live only in page memory. No application database or analytics is added. Cookie preferences are the only application data saved in browser storage. Conversation data goes to OpenRouter when chat is configured; enquiries go to your SMTP provider. See /privacy and review providers' retention settings for your deployment.
+Visitors' chat and form details live only in page memory. No application database or analytics is added. Cookie preferences are the only application data saved in browser storage. Conversation data goes to OpenRouter when chat is configured; enquiries go to Resend or your SMTP provider. See /privacy and review providers' retention settings for your deployment.
 
 ## Cookie consent
 

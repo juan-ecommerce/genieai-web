@@ -13,6 +13,8 @@ export function createConfig(env = {}) {
     apiKey: env.OPENROUTER_API_KEY || "",
     model: env.OPENROUTER_MODEL || "openai/gpt-4.1-mini",
     siteUrl,
+    resendKey: (env.RESENDKEY || "").trim(),
+    resendFrom: (env.RESEND_FROM || "").trim(),
     smtpHost: env.SMTP_HOST || "",
     smtpPort:
       Number.isInteger(smtpPort) && smtpPort > 0 && smtpPort <= 65535
@@ -25,8 +27,13 @@ export function createConfig(env = {}) {
   };
 }
 
+export function emailProvider(config) {
+  if (config.resendKey && config.resendFrom) return "resend";
+  if (config.smtpHost && config.smtpUser && config.smtpPass && config.smtpFrom)
+    return "smtp";
+  return null;
+}
+
 export function emailConfigured(config) {
-  return Boolean(
-    config.smtpHost && config.smtpUser && config.smtpPass && config.smtpFrom,
-  );
+  return Boolean(emailProvider(config));
 }

@@ -65,6 +65,8 @@ test("build output persists only allowlisted configuration and excludes credenti
     GENIEAI_SECRET_ID: "genieai/production",
     GENIEAI_SECRET_REGION: "eu-north-1",
     OPENROUTER_API_KEY: "private-build-key",
+    RESENDKEY: "private-resend-key",
+    RESEND_FROM: "hello@example.test",
     SMTP_USER: "private-mail-user",
     SMTP_PASS: "private-build-password",
     AWS_SECRET_ACCESS_KEY: "private-aws-key",
@@ -75,6 +77,8 @@ test("build output persists only allowlisted configuration and excludes credenti
   assert.equal(settings.GENIEAI_SECRET_REGION, "eu-north-1");
   assert.equal(settings.OPENROUTER_MODEL, "test/model");
   assert.equal(settings.OPENROUTER_API_KEY, undefined);
+  assert.equal(settings.RESENDKEY, undefined);
+  assert.equal(settings.RESEND_FROM, undefined);
   assert.equal(settings.SMTP_USER, undefined);
   assert.equal(settings.SMTP_PASS, undefined);
   assert.equal(settings.AWS_SECRET_ACCESS_KEY, undefined);

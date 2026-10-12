@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import { z } from "zod";
-import { LEAD_RECIPIENT } from "./config.mjs";
+import { LEAD_RECIPIENT, emailProvider } from "./config.mjs";
 
 const singleLine = /^[^\r\n\0]*$/;
 export const inquirySchema = z
@@ -30,7 +30,30 @@ export const contactSchema = inquirySchema
   })
   .strict();
 
-export function createMailSender(config) {
+export function createMailSender(config, fetchImpl = fetch) {
+  if (emailProvider(config) === "resend") {
+    return async (mail) => {
+      const response = await fetchImpl("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + config.resendKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: mail.from,
+          to: [LEAD_RECIPIENT],
+          reply_to: mail.replyTo,
+          subject: mail.subject,
+          text: mail.text,
+        }),
+        signal: AbortSignal.timeout(15000),
+      });
+      const result = await response.json();
+      if (!response.ok || typeof result?.id !== "string" || !result.id.trim())
+        throw new Error("The email provider did not accept the enquiry.");
+      return { accepted: [LEAD_RECIPIENT] };
+    };
+  }
   const transport = nodemailer.createTransport({
     host: config.smtpHost,
     port: config.smtpPort,
@@ -48,7 +71,7 @@ export function createMailSender(config) {
 
 export async function deliverInquiry(config, inquiry, sendMail) {
   const result = await sendMail({
-    from: config.smtpFrom,
+    from: emailProvider(config) === "resend" ? config.resendFrom : config.smtpFrom,
     to: LEAD_RECIPIENT,
     replyTo: inquiry.email,
     subject: `GenieAI enquiry from ${inquiry.name}`,
@@ -62,6 +85,6 @@ export async function deliverInquiry(config, inquiry, sendMail) {
       (value) => String(value).toLowerCase() === LEAD_RECIPIENT,
     )
   ) {
-    throw new Error("The recipient was not accepted by SMTP");
+    throw new Error("The recipient was not accepted by the email provider.");
   }
 }

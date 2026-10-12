@@ -17,6 +17,8 @@ test("runtime secret enables chat and email without replacing public configurati
         assert.equal(region, "eu-north-1");
         return JSON.stringify({
           OPENROUTER_API_KEY: "runtime-key",
+          RESENDKEY: "resend-runtime-key",
+          RESEND_FROM: "GenieAI <hello@example.test>",
           SMTP_HOST: "smtp.example.test",
           SMTP_PORT: 465,
           SMTP_USER: "mail-user",
@@ -30,6 +32,8 @@ test("runtime secret enables chat and email without replacing public configurati
   );
   const config = createConfig(env);
   assert.equal(config.apiKey, "runtime-key");
+  assert.equal(config.resendKey, "resend-runtime-key");
+  assert.equal(config.resendFrom, "GenieAI <hello@example.test>");
   assert.equal(config.model, "test/model");
   assert.equal(config.siteUrl, "https://genieai.se");
   assert.equal(config.smtpPort, 465);
@@ -44,6 +48,8 @@ test("a configured secret failure disables providers without leaking its error",
       GENIEAI_SECRET_ID: "genieai/production",
       OPENROUTER_API_KEY: "stale-key",
       SMTP_PASS: "stale-password",
+      RESENDKEY: "stale-resend-key",
+      RESEND_FROM: "hello@example.test",
       SITE_URL: "https://genieai.se",
     },
     {
@@ -55,6 +61,8 @@ test("a configured secret failure disables providers without leaking its error",
   );
   const config = createConfig(env);
   assert.equal(config.apiKey, "");
+  assert.equal(config.resendKey, "");
+  assert.equal(config.resendFrom, "");
   assert.equal(emailConfigured(config), false);
   assert.equal(config.siteUrl, "https://genieai.se");
   assert.equal(logs.length, 1);
@@ -68,6 +76,8 @@ test("malformed secret payloads fail closed", async () => {
     "[]",
     '{"OPENROUTER_API_KEY":42}',
     '{"SMTP_PASS":{"value":"not-a-string"}}',
+    '{"RESENDKEY":42}',
+    '{"RESEND_FROM":{"value":"not-a-string"}}',
   ]) {
     const env = await loadRuntimeEnvironment(
       {

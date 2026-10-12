@@ -81,7 +81,7 @@ export function createApiApp(env = process.env, dependencies = {}) {
   );
   const sendMail =
     dependencies.sendMail ||
-    (emailConfigured(config) ? createMailSender(config) : null);
+    (emailConfigured(config) ? createMailSender(config, dependencies.emailFetchImpl) : null);
 
   app.post(
     "/chat",
