@@ -28,6 +28,27 @@ Run npm run build, then npm start. The Node server serves the built website, rou
 
 Static-only hosting and npm run preview serve the frontend without its API. They need a separate backend/reverse proxy for /api. This repository does not publish itself.
 
+### AWS Amplify Hosting
+
+The root `amplify.yml` overrides the console build specification. It uses Node 22 and `npm run build:amplify` to generate `.amplify-hosting`, including public static assets, the self-contained Express compute server, and a routing manifest. `/api/*` and HTML documents reach compute on port 3000; assets use Amplify's static hosting. The build preserves only allowlisted, non-secret configuration. Local `.env` files and build-time credentials are excluded from both deployment targets.
+
+For the production app in Stockholm (`eu-north-1`):
+
+1. Create an AWS Secrets Manager secret named `genieai/production` in `eu-north-1`. Use a JSON object with `OPENROUTER_API_KEY` and, when email is ready, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM`. SMTP port may be a string or a number. Store actual credentials only in Secrets Manager.
+2. Create an IAM role whose trust policy allows `amplify.amazonaws.com` to perform `sts:AssumeRole`. Its permissions policy should allow `secretsmanager:GetSecretValue` only on the ARN of this secret. If using a customer-managed KMS key, also grant the necessary key decrypt permission.
+3. In Amplify, open **App settings → IAM roles → Compute role → Edit**, and attach the role to `main` only. Avoid giving preview branches access to production credentials.
+4. In **Hosting → Environment variables**, set `GENIEAI_SECRET_ID=genieai/production` and `GENIEAI_SECRET_REGION=eu-north-1`. Keep `SITE_URL=https://genieai.se` and `OPENROUTER_MODEL=openai/gpt-4.1-mini` here. Remove ordinary build variables containing the OpenRouter key or SMTP credentials after the runtime secret is configured.
+5. Deploy the commit containing `amplify.yml`. Its artifact directory is `.amplify-hosting`, rather than `dist`. An existing static app may also need its platform changed to `WEB_COMPUTE`; check the app's platform with `aws amplify get-app --app-id <app-id> --region eu-north-1 --query app.platform`. If it is `WEB`, use `aws amplify update-app --app-id <app-id> --platform WEB_COMPUTE --region eu-north-1` before deploying the compute bundle. Preserve domain redirects, and remove static SPA rewrites that intercept `/api/*` or replace server routes with `/index.html`.
+6. Verify that `https://www.genieai.se/api/status` returns JSON with `chat: true`, then send a real message through the website. `email` becomes true only after SMTP is configured; validate delivery separately.
+
+Verify client IP handling before relying on per-IP limits: Amplify forwards requests through proxies, while `TRUST_PROXY` defaults to `0`. Without a verified trusted hop count, the app may count multiple visitors under the same proxy address. Determine the actual forwarded chain in the deployed environment, set `TRUST_PROXY` to that count in Amplify's build variables, redeploy, and confirm two independent client IPs receive separate limits. Never enable blanket proxy trust or assume the first forwarded address is trustworthy. Use an edge or shared rate limiter for enforcement across compute instances.
+
+The server reads the secret once per compute process using the AWS SDK's default credential provider and its attached Compute role. There are no hardcoded AWS access keys. Secret values and provider error details are not logged. If secret retrieval or parsing fails, the website stays available while chat and email return an unavailable state; after correcting the secret or role, redeploy to restart existing processes. New secret values require restarting/redeploying running processes.
+
+Local development and `npm start` continue to use the local `.env`. To inspect the Amplify bundle locally, run `npm run build:amplify`, then `node .amplify-hosting/compute/default/index.mjs`. Supply the non-secret secret ID/region and authorized AWS credentials only when testing real Secrets Manager access.
+
+AWS references: [Express deployment manifest](https://docs.aws.amazon.com/amplify/latest/userguide/deploy-express-server.html), [SSR Compute roles](https://docs.aws.amazon.com/amplify/latest/userguide/amplify-SSR-compute-role.html), and [Amplify build settings](https://docs.aws.amazon.com/amplify/latest/userguide/edit-build-settings.html).
+
 Chat has a 20 requests/minute/IP limit; email has 5/hour/IP. These counters live in memory, reset on restart, and are local to each server instance. Multiple replicas require a shared limiter before public launch. Chat requests have bounded history and an upstream timeout. SMTP has connection and socket timeouts.
 
 Visitors' chat and form details live only in page memory. No application database or analytics is added. Cookie preferences are the only application data saved in browser storage. Conversation data goes to OpenRouter when chat is configured; enquiries go to your SMTP provider. See /privacy and review providers' retention settings for your deployment.

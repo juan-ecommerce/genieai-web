@@ -33,3 +33,5 @@ dist-ssr
 test-results/
 playwright-report/
 .firecrawl/
+.amplify-hosting/
+.npm/

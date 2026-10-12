@@ -12,6 +12,8 @@ export default tseslint.config(
       "playwright-report/**",
       ".superpowers/**",
       ".firecrawl/**",
+      ".amplify-hosting/**",
+      ".npm/**",
     ],
   },
   {
