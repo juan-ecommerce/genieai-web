@@ -36,7 +36,7 @@ export async function buildAmplifyBundle(projectRoot, env = process.env) {
   // Cleanup is limited to this project's generated deployment directory.
   if (relative(root, output) !== ".amplify-hosting")
     throw new Error("Invalid Amplify output directory.");
-  await rm(output, { recursive: true, force: true });
+  await rm(output, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
   await mkdir(compute, { recursive: true });
   await mkdir(staticDirectory, { recursive: true });
 

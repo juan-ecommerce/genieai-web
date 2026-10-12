@@ -1,9 +1,46 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createWebApp } from "../server/web.mjs";
+import * as startup from "../server/start.mjs";
+import { createServer } from "node:http";
+
+test("compute loads credentials on the first API request and shares concurrent initialization", async (t) => {
+  assert.equal(typeof startup.createWebHandler, "function");
+  const distDirectory = await mkdtemp(join(tmpdir(), "genieai-credentials-"));
+  t.after(() => rm(distDirectory, { recursive: true, force: true }));
+  await writeFile(join(distDirectory, "index.html"), await readFile(new URL("../index.html", import.meta.url), "utf8"));
+  let listening = false;
+  let reads = 0;
+  const handler = startup.createWebHandler({}, {
+    distDirectory,
+    resolveEnvironment: async () => {
+      assert.equal(listening, true);
+      reads++;
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      return { OPENROUTER_API_KEY: "request-time-key" };
+    },
+  });
+  assert.equal(reads, 0);
+  const server = createServer(handler).listen(0, "127.0.0.1");
+  await new Promise((resolve) => server.once("listening", resolve));
+  listening = true;
+  try {
+    assert.equal((await fetch("http://127.0.0.1:" + server.address().port + "/")).status, 200);
+    assert.equal(reads, 0, "website readiness requests do not initialize credentials");
+    const responses = await Promise.all(Array.from({ length: 3 }, async () => {
+      const response = await fetch("http://127.0.0.1:" + server.address().port + "/api/status");
+      assert.equal(response.status, 200);
+      return response.json();
+    }));
+    assert.deepEqual(responses, Array(3).fill({ chat: true, email: false }));
+    assert.equal(reads, 1);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
 
 test("production serves route metadata, API, assets, sitemap, and real 404s", async () => {
   const distDirectory = await mkdtemp(join(tmpdir(), "genieai-runtime-"));
