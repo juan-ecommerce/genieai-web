@@ -89,3 +89,26 @@ test("local credentials still work when no runtime secret is configured", async 
   );
   assert.equal(createConfig(env).apiKey, "local-key");
 });
+
+test("startup logs identify known AWS failures while redacting unknown error names", async () => {
+  for (const [name, expected] of [
+    ["AccessDeniedException", "AccessDeniedException"],
+    ["CredentialsProviderError", "CredentialsProviderError"],
+    ["secret-key-in-an-error-name", "credential_load_failed"],
+  ]) {
+    const logs = [];
+    await loadRuntimeEnvironment(
+      { GENIEAI_SECRET_ID: "genieai/production" },
+      {
+        readSecret: async () => {
+          const error = new Error("secret-key-in-an-error-message");
+          error.name = name;
+          throw error;
+        },
+        logError: (message) => logs.push(message),
+      },
+    );
+    assert.match(logs.join(), new RegExp(expected));
+    assert.doesNotMatch(logs.join(), /secret-key/);
+  }
+});

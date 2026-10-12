@@ -50,9 +50,36 @@ export async function loadRuntimeEnvironment(env, options = {}) {
       values[key] = String(secret[key]);
     }
     return { ...result, ...values };
-  } catch {
+  } catch (error) {
+    const knownErrors = [
+      "AccessDeniedException",
+      "ResourceNotFoundException",
+      "DecryptionFailure",
+      "InvalidRequestException",
+      "CredentialsProviderError",
+      "TokenProviderError",
+      "ProviderError",
+      "TimeoutError",
+      "AbortError",
+      "SyntaxError",
+      "TypeError",
+    ];
+    const errorName = error?.name;
+    const code = knownErrors.includes(errorName)
+      ? errorName
+      : "credential_load_failed";
+    const sources = {
+      environment: Boolean(env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY),
+      container: Boolean(
+        env.AWS_CONTAINER_CREDENTIALS_FULL_URI ||
+          env.AWS_CONTAINER_CREDENTIALS_RELATIVE_URI,
+      ),
+      webIdentity: Boolean(env.AWS_WEB_IDENTITY_TOKEN_FILE && env.AWS_ROLE_ARN),
+    };
     (options.logError || console.error)(
-      "Production credentials could not be loaded. Check the secret and Amplify Compute role; chat and email are unavailable.",
+      "Production credentials could not be loaded. " +
+        JSON.stringify({ code, credentialSources: sources }) +
+        " Check the secret and Amplify Compute role; chat and email are unavailable.",
     );
     return result;
   }
